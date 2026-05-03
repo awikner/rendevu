@@ -10,6 +10,82 @@ _tp = TravelpayoutsService()
 _booking = BookingService()
 
 
+async def _fetch_fixed_flights(
+    request: SearchRequest, destination: DestinationCity
+) -> list[FlightOption]:
+    """Specific-date search: each origin queries independently (dates are already fixed)."""
+    tasks = [
+        _tp.get_cheapest_on_route(
+            origin=o.iata,
+            origin_name=o.name,
+            destination=destination.iata,
+            depart_date=request.depart_date,
+            return_date=request.return_date,
+            travelers=o.travelers,
+            nonstop_only=request.flight_constraints.nonstop_only,
+            max_duration_hours=request.flight_constraints.max_duration_hours,
+        )
+        for o in request.origins
+    ]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    if any(isinstance(r, Exception) for r in results):
+        errors = [str(r) for r in results if isinstance(r, Exception)]
+        raise ValueError(f"Incomplete flights for {destination.iata}: {'; '.join(errors)}")
+    return list(results)  # type: ignore[return-value]
+
+
+async def _fetch_flexible_flights(
+    request: SearchRequest, destination: DestinationCity
+) -> list[FlightOption]:
+    """Flexible-date search: find the cheapest date pair shared by ALL origins so the
+    group travels on the same days."""
+    map_tasks = [
+        _tp.get_flexible_price_map(
+            origin=o.iata,
+            destination=destination.iata,
+            trip_type=request.trip_type,  # type: ignore[arg-type]
+            earliest_depart=request.earliest_depart,
+            latest_return=request.latest_return,
+            nonstop_only=request.flight_constraints.nonstop_only,
+        )
+        for o in request.origins
+    ]
+    price_maps = await asyncio.gather(*map_tasks, return_exceptions=True)
+    if any(isinstance(m, Exception) for m in price_maps):
+        errors = [str(m) for m in price_maps if isinstance(m, Exception)]
+        raise ValueError(f"Incomplete flights for {destination.iata}: {'; '.join(errors)}")
+
+    # Intersection: only keep date pairs available for every origin
+    shared = set(price_maps[0].keys())  # type: ignore[union-attr]
+    for pm in price_maps[1:]:
+        shared &= pm.keys()  # type: ignore[union-attr]
+    if not shared:
+        raise ValueError(
+            f"No shared travel dates found for all origins → {destination.iata}"
+        )
+
+    # Pick the date pair with the lowest combined cost across all travelers
+    best_pair = min(
+        shared,
+        key=lambda p: sum(
+            (pm[p][0]["price"] + pm[p][1]["price"]) * o.travelers
+            for o, pm in zip(request.origins, price_maps)
+        ),
+    )
+
+    return [
+        _tp.flight_option_from_entries(
+            origin=o.iata,
+            origin_name=o.name,
+            destination=destination.iata,
+            out_entry=pm[best_pair][0],
+            ret_entry=pm[best_pair][1],
+            travelers=o.travelers,
+        )
+        for o, pm in zip(request.origins, price_maps)
+    ]
+
+
 @router.post("/search", response_model=list[DestinationResult])
 async def search(request: SearchRequest) -> list[DestinationResult]:
     if not request.destinations:
@@ -30,30 +106,10 @@ async def search(request: SearchRequest) -> list[DestinationResult]:
 async def _fetch_destination(
     request: SearchRequest, destination: DestinationCity
 ) -> DestinationResult:
-    flight_tasks = [
-        _tp.get_cheapest_on_route(
-            origin=o.iata,
-            origin_name=o.name,
-            destination=destination.iata,
-            depart_date=request.depart_date,
-            return_date=request.return_date,
-            trip_type=request.trip_type,
-            earliest_depart=request.earliest_depart,
-            latest_return=request.latest_return,
-            travelers=o.travelers,
-            nonstop_only=request.flight_constraints.nonstop_only,
-            max_duration_hours=request.flight_constraints.max_duration_hours,
-        )
-        for o in request.origins
-    ]
-    flight_results = await asyncio.gather(*flight_tasks, return_exceptions=True)
-
-    # If any origin leg failed, skip this destination rather than returning partial data
-    if any(isinstance(r, Exception) for r in flight_results):
-        errors = [str(r) for r in flight_results if isinstance(r, Exception)]
-        raise ValueError(f"Incomplete flights for {destination.iata}: {'; '.join(errors)}")
-
-    flights: list[FlightOption] = list(flight_results)  # type: ignore[arg-type]
+    if request.trip_type:
+        flights = await _fetch_flexible_flights(request, destination)
+    else:
+        flights = await _fetch_fixed_flights(request, destination)
     flight_cost = sum(f.total_price for f in flights)
 
     nights = _nights_from_request(request)
