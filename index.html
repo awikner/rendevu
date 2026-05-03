@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rendevu — Find your group destination</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Rendevu</h1>
+    <p>Find the cheapest destination for your whole group</p>
+  </header>
+
+  <main>
+    <form id="search-form" novalidate>
+
+      <section class="form-section">
+        <h2>Where are you flying from?</h2>
+        <p class="section-hint">Add one row per departure city.</p>
+        <div id="origins-list">
+          <div class="origin-row input-row">
+            <div class="input-group">
+              <label>City</label>
+              <input type="text" class="origin-name" placeholder="New York" required>
+            </div>
+            <div class="input-group input-group--short">
+              <label>Airport code</label>
+              <input type="text" class="origin-iata" placeholder="JFK" maxlength="3" required>
+            </div>
+            <div class="input-group input-group--short">
+              <label>Travelers</label>
+              <input type="number" class="origin-travelers" min="1" value="1" required>
+            </div>
+            <button type="button" class="btn-remove" aria-label="Remove">&#times;</button>
+          </div>
+        </div>
+        <button type="button" id="add-origin" class="btn-add">+ Add origin city</button>
+      </section>
+
+      <section class="form-section">
+        <h2>Where do you want to go?</h2>
+        <p class="section-hint">Add the destination cities you'd like to compare.</p>
+        <div id="destinations-list">
+          <div class="destination-row input-row">
+            <div class="input-group">
+              <label>City</label>
+              <input type="text" class="dest-name" placeholder="Paris" required>
+            </div>
+            <div class="input-group input-group--short">
+              <label>Airport code</label>
+              <input type="text" class="dest-iata" placeholder="CDG" maxlength="3" required>
+            </div>
+            <button type="button" class="btn-remove" aria-label="Remove">&#times;</button>
+          </div>
+        </div>
+        <button type="button" id="add-destination" class="btn-add">+ Add destination</button>
+      </section>
+
+      <section class="form-section">
+        <h2>When are you traveling?</h2>
+        <div class="radio-toggle">
+          <label class="radio-label">
+            <input type="radio" name="date-mode" value="specific" checked>
+            Specific dates
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="date-mode" value="triptype">
+            Flexible dates
+          </label>
+        </div>
+
+        <div id="specific-dates-panel">
+          <div class="date-row">
+            <div class="input-group">
+              <label for="depart-date">Departure</label>
+              <input type="date" id="depart-date">
+            </div>
+            <div class="input-group">
+              <label for="return-date">Return</label>
+              <input type="date" id="return-date">
+            </div>
+          </div>
+        </div>
+
+        <div id="triptype-panel" hidden>
+          <div class="input-group" style="max-width:240px;margin-bottom:0.75rem">
+            <label for="trip-type">Trip length</label>
+            <select id="trip-type">
+              <option value="weekend">Weekend (2 nights)</option>
+              <option value="one_week">One week (7 nights)</option>
+              <option value="two_weeks">Two weeks (14 nights)</option>
+            </select>
+          </div>
+          <div class="date-row">
+            <div class="input-group">
+              <label for="earliest-depart">Earliest departure</label>
+              <input type="date" id="earliest-depart">
+            </div>
+            <div class="input-group">
+              <label for="latest-return">Latest return</label>
+              <input type="date" id="latest-return">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>Flight preferences</h2>
+        <div class="preference-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="nonstop-only">
+            Nonstop flights only
+          </label>
+        </div>
+        <div class="preference-row">
+          <div class="input-group input-group--inline">
+            <label for="max-duration">Max flight duration (hours)</label>
+            <input type="number" id="max-duration" min="1" max="30" placeholder="Any" style="width:80px">
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>Lodging preferences</h2>
+        <div class="preferences-grid">
+          <div class="input-group">
+            <label for="rooms">Rooms needed</label>
+            <input type="number" id="rooms" min="1" value="1">
+          </div>
+          <div class="input-group">
+            <label for="lodging-type">Lodging type</label>
+            <select id="lodging-type">
+              <option value="any">Any</option>
+              <option value="hotel">Hotel</option>
+              <option value="vacation_rental">Vacation rental</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="min-rating">Minimum rating</label>
+            <select id="min-rating">
+              <option value="">Any</option>
+              <option value="3">3+ stars</option>
+              <option value="4">4+ stars</option>
+              <option value="4.5">4.5+ stars</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-search">Search destinations</button>
+      </div>
+
+      <div id="form-error" class="error-message" hidden></div>
+    </form>
+  </main>
+
+  <script src="js/search.js"></script>
+</body>
+</html>
