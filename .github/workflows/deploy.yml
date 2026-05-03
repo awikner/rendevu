@@ -1,0 +1,38 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Inject secrets into frontend
+        env:
+          RENDER_BACKEND_URL: ${{ secrets.RENDER_BACKEND_URL }}
+          RENDEVU_CLIENT_TOKEN: ${{ secrets.RENDEVU_CLIENT_TOKEN }}
+        run: |
+          python3 - <<'PYEOF'
+          import os
+          path = "frontend/js/search.js"
+          with open(path) as f:
+              src = f.read()
+          src = src.replace("RENDER_BACKEND_URL_PLACEHOLDER", os.environ["RENDER_BACKEND_URL"])
+          src = src.replace("RENDEVU_CLIENT_TOKEN_PLACEHOLDER", os.environ["RENDEVU_CLIENT_TOKEN"])
+          with open(path, "w") as f:
+              f.write(src)
+          PYEOF
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./frontend

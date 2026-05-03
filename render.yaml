@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: rendevu-backend
+    env: python
+    region: ohio
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: TRAVELPAYOUTS_TOKEN
+        sync: false
+      - key: BOOKING_AFFILIATE_ID
+        sync: false
+      - key: BOOKING_API_KEY
+        sync: false
+      - key: CLIENT_API_TOKEN
+        sync: false
+      - key: GITHUB_PAGES_ORIGIN
+        sync: false

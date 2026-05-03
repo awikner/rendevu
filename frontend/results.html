@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rendevu — Results</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>Rendevu</h1>
+      <a href="index.html" class="btn-back">&#8592; New search</a>
+    </div>
+  </header>
+
+  <main>
+    <div id="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Searching for the best deals&hellip;</p>
+    </div>
+
+    <div id="no-results" class="empty-state" hidden>
+      <p>No destinations found. Try adjusting your search criteria.</p>
+      <a href="index.html" class="btn-search">Try again</a>
+    </div>
+
+    <div id="results-container" hidden>
+      <div class="results-header">
+        <h2 id="results-count"></h2>
+        <div class="sort-controls">
+          <label for="sort-by">Sort by</label>
+          <select id="sort-by">
+            <option value="total">Total cost</option>
+            <option value="flights">Flight cost</option>
+            <option value="lodging">Lodging cost</option>
+          </select>
+        </div>
+      </div>
+      <div id="results-grid" class="results-grid"></div>
+    </div>
+  </main>
+
+  <script src="js/results.js"></script>
+</body>
+</html>
